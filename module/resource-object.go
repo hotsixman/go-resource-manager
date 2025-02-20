@@ -329,8 +329,60 @@ func NewResourceObject(param ResourceConstructorParam) *ResourceObject {
 		name:               param.Name,
 		userPermissionMap:  param.UserPermissionMap,
 		groupPermissionMap: param.GroupPermissionMap,
-		children:           []*ResourceObject{},
-		childrenMap:        map[string]*ResourceObject{},
+		children:           [](*ResourceObject){},
+		childrenMap:        map[string](*ResourceObject){},
 	}
 	return p
+}
+
+func FromJsonResourceObject(jsonData string) *ResourceObject {
+	var resourceObjectMap map[string]any
+	json.Unmarshal([]byte(jsonData), &resourceObjectMap)
+	return FromMapResourceObject(resourceObjectMap)
+}
+
+func FromMapResourceObject(resourceObjectMap map[string]any) *ResourceObject {
+	isCollection := resourceObjectMap["isCollection"].(bool)
+	path := resourceObjectMap["path"].(string)
+	name := resourceObjectMap["name"].(string)
+
+	userPermissionMap := map[string][]string{}
+	for key, value := range resourceObjectMap["userPermissionMap"].(map[string]any) {
+		permissions := []string{}
+		for _, permission := range value.([]any) {
+			permissions = append(permissions, permission.(string))
+		}
+		userPermissionMap[key] = permissions
+	}
+	groupPermissionMap := map[string][]string{}
+	for key, value := range resourceObjectMap["groupPermissionMap"].(map[string]any) {
+		permissions := []string{}
+		for _, permission := range value.([]any) {
+			permissions = append(permissions, permission.(string))
+		}
+		groupPermissionMap[key] = permissions
+	}
+
+	children := [](*ResourceObject){}
+	childrenMap := map[string](*ResourceObject){}
+	for _, v := range resourceObjectMap["children"].([]any) {
+		childMap := v.((map[string]any))
+		children = append(children, FromMapResourceObject(childMap))
+	}
+	for key, value := range resourceObjectMap["childrenMap"].(map[string]any) {
+		childMap := value.(map[string]any)
+		childrenMap[key] = FromMapResourceObject(childMap)
+	}
+
+	resourceObject := &ResourceObject{
+		isCollection:       isCollection,
+		path:               path,
+		name:               name,
+		userPermissionMap:  userPermissionMap,
+		groupPermissionMap: groupPermissionMap,
+		children:           children,
+		childrenMap:        childrenMap,
+	}
+
+	return resourceObject
 }

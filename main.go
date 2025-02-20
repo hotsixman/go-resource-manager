@@ -6,17 +6,7 @@ import (
 )
 
 func main() {
-	resource := resourcemanager.NewResourceObject(resourcemanager.ResourceConstructorParam{
-		IsCollection:       true,
-		Name:               "",
-		Path:               "/",
-		UserPermissionMap:  map[string]([]string){},
-		GroupPermissionMap: map[string]([]string){},
-	})
+	resourceManager := resourcemanager.FromJsonResourceManager("{    \"children\": [        {            \"children\": [                {                    \"children\": [],                    \"childrenMap\": {},                    \"groupPermissionMap\": {},                    \"isCollection\": false,                    \"name\": \"sub-test\",                    \"path\": \"/test/sub-test\",                    \"userPermissionMap\": {}                }            ],            \"childrenMap\": {                \"sub-test\": {                    \"children\": [],                    \"childrenMap\": {},                    \"groupPermissionMap\": {},                    \"isCollection\": false,                    \"name\": \"sub-test\",                    \"path\": \"/test/sub-test\",                    \"userPermissionMap\": {}                }            },            \"groupPermissionMap\": {},            \"isCollection\": true,            \"name\": \"test\",            \"path\": \"/test\",            \"userPermissionMap\": {}        }    ],    \"childrenMap\": {        \"test\": {            \"children\": [                {                    \"children\": [],                    \"childrenMap\": {},                    \"groupPermissionMap\": {},                    \"isCollection\": false,                    \"name\": \"sub-test\",                    \"path\": \"/test/sub-test\",                    \"userPermissionMap\": {}                }            ],            \"childrenMap\": {                \"sub-test\": {                    \"children\": [],                    \"childrenMap\": {},                    \"groupPermissionMap\": {},                    \"isCollection\": false,                    \"name\": \"sub-test\",                    \"path\": \"/test/sub-test\",                    \"userPermissionMap\": {}                }            },            \"groupPermissionMap\": {},            \"isCollection\": true,            \"name\": \"test\",            \"path\": \"/test\",            \"userPermissionMap\": {}        }    },    \"groupPermissionMap\": {},    \"isCollection\": true,    \"name\": \"\",    \"path\": \"/\",    \"userPermissionMap\": {        \"hi\": [\"read\"]    }}")
 
-	resource.CreateChild("test", true)
-	resource.GetChild("test").CreateChild("sub-test", false)
-
-	jsonData, _ := resource.ToJSON()
-	fmt.Println(jsonData)
+	fmt.Println(resourceManager.ToJson())
 }
