@@ -1,0 +1,27 @@
+{
+    "rootResource": {
+        "childrenMap": {
+            "foo": {
+                "childrenMap": {},
+                "groupPermissionMap": {},
+                "isDirectory": true,
+                "name": "foo",
+                "path": "/foo",
+                "userPermissionMap": {}
+            },
+            "test": {
+                "childrenMap": {},
+                "groupPermissionMap": {},
+                "isDirectory": true,
+                "name": "test",
+                "path": "/test",
+                "userPermissionMap": {}
+            }
+        },
+        "groupPermissionMap": {},
+        "isDirectory": true,
+        "name": "",
+        "path": "/",
+        "userPermissionMap": {}
+    }
+}

@@ -2,6 +2,7 @@ package resourcemanager
 
 import (
 	"encoding/json"
+	util "resource-manager/util"
 )
 
 type ResourceObject struct {
@@ -30,7 +31,7 @@ func (p ResourceObject) GetUserPermissions(username string) []string {
 		permissions = []string{}
 	}
 
-	return permissions
+	return util.CloneSlice(permissions)
 }
 
 /*
@@ -42,7 +43,7 @@ func (p ResourceObject) GetGroupPermissions(groupname string) []string {
 		permissions = []string{}
 	}
 
-	return permissions
+	return util.CloneSlice(permissions)
 }
 
 /*
@@ -91,12 +92,12 @@ func (p *ResourceObject) AddUserPermission(username string, permission string) [
 		}
 	}
 	if alreadyHasPermission {
-		return p.GetUserPermissions(username)
+		return util.CloneSlice(p.GetUserPermissions(username))
 	}
 
 	userPermissions = append(userPermissions, permission)
 	p.userPermissionMap[username] = userPermissions
-	return p.GetUserPermissions(username)
+	return util.CloneSlice(p.GetUserPermissions(username))
 }
 
 /*
@@ -115,12 +116,12 @@ func (p *ResourceObject) AddGroupPermission(groupname string, permission string)
 		}
 	}
 	if alreadyHasPermission {
-		return p.GetGroupPermissions(groupname)
+		return util.CloneSlice(p.GetGroupPermissions(groupname))
 	}
 
 	groupPermissions = append(groupPermissions, permission)
 	p.groupPermissionMap[groupname] = groupPermissions
-	return p.GetGroupPermissions(groupname)
+	return util.CloneSlice(p.GetGroupPermissions(groupname))
 }
 
 /*
@@ -198,10 +199,8 @@ func (p ResourceObject) GetChild(name string) *ResourceObject {
 
 /*
 하위 리소스 생성
-
-- @return {bool} 성공 여부
-
-- @return {*ResourceObject} 생성한 하위 리소스, 성공 여부가 false이면 nil
+  - @return {bool} 성공 여부
+  - @return {*ResourceObject} 생성한 하위 리소스, 성공 여부가 false이면 nil
 */
 func (p *ResourceObject) CreateChild(name string, isDirectory bool) (bool, *ResourceObject) {
 	if name == "" {
@@ -237,12 +236,15 @@ func (p *ResourceObject) CreateChild(name string, isDirectory bool) (bool, *Reso
 /*
 하위 리소스 삭제
 */
-func (p *ResourceObject) RemoveChild(name string) bool {
+func (p *ResourceObject) DeleteChild(name string) bool {
 	child := p.GetChild(name)
 	if child == nil {
 		return false
 	}
 
+	for key := range child.childrenMap { // 혹시몰라서 ㅎㅎ
+		child.DeleteChild(key)
+	}
 	delete(p.childrenMap, name)
 	return true
 }
@@ -295,12 +297,18 @@ func NewResourceObject(param ResourceConstructorParam) *ResourceObject {
 	return p
 }
 
+/*
+json으로부터 리소스 객체를 생성
+*/
 func FromJsonResourceObject(jsonData string) *ResourceObject {
 	var resourceObjectMap map[string]any
 	json.Unmarshal([]byte(jsonData), &resourceObjectMap)
 	return FromMapResourceObject(resourceObjectMap)
 }
 
+/*
+map으로부터 리소스 객체를 생성
+*/
 func FromMapResourceObject(resourceObjectMap map[string]any) *ResourceObject {
 	isDirectory := resourceObjectMap["isDirectory"].(bool)
 	path := resourceObjectMap["path"].(string)
