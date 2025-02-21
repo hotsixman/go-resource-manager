@@ -1,4 +1,4 @@
-package resourcemanager
+package constant
 
 var PERMISSIONS = [5]string{
 	/*

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
+	class "app/class"
+	server "app/server"
 	"os"
-	resourcemanager "resource-manager/module"
 )
 
 func main() {
@@ -11,8 +11,9 @@ func main() {
 	if err != nil {
 		return
 	}
-	resourceManager := resourcemanager.FromJsonResourceManager(string(json))
+	resourceManager := class.FromJsonResourceManager(string(json))
 	resourceManager.AddUserPermission("/test", "snom", "read")
 	resourceManager.CreateResource("/test/ass.txt", false)
-	fmt.Println(resourceManager.ToJson())
+	resourceManagerServer := server.NewServer(resourceManager)
+	resourceManagerServer.Listen(3000)
 }

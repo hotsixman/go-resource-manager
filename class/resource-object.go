@@ -1,8 +1,8 @@
-package resourcemanager
+package class
 
 import (
+	util "app/util"
 	"encoding/json"
-	util "resource-manager/util"
 )
 
 type ResourceObject struct {
