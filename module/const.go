@@ -1,6 +1,6 @@
 package resourcemanager
 
-var PERMISSIONS = [3]string{
+var PERMISSIONS = [5]string{
 	/*
 		파일 내용을 읽을 수 있음.
 		폴더의 하위 파일, 폴더 목록을 볼 수 있음.
@@ -16,4 +16,12 @@ var PERMISSIONS = [3]string{
 		파일, 폴더의 이름을 변경할 수 있음.
 	*/
 	"modify",
+	/*
+		파일, 폴더에 대해 잠금처리를 할 수 있음.
+	*/
+	"lock",
+	/*
+		위의 권한을 포함한 모든 권한
+	*/
+	"all",
 }

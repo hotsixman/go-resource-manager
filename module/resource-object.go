@@ -12,6 +12,8 @@ type ResourceObject struct {
 	userPermissionMap  map[string]([]string)
 	groupPermissionMap map[string]([]string)
 	childrenMap        map[string](*ResourceObject)
+	isLocked           bool
+	lockToken          string
 }
 
 type ResourceConstructorParam struct {
@@ -169,6 +171,75 @@ func (p *ResourceObject) DeleteGroupPermission(groupname string, permission stri
 }
 
 /*
+잠금 여부 반환
+*/
+func (p ResourceObject) IsLocked() bool {
+	return p.isLocked
+}
+
+/*
+잠금 토큰 반환
+*/
+func (p ResourceObject) GetLockToken() string {
+	return p.lockToken
+}
+
+/*
+리소스 잠금
+  - @return {bool} 잠금 성공 여부
+  - @return {string} 잠금 토큰
+*/
+func (p *ResourceObject) Lock(isDepthInfinity bool, lockToken string) (bool, string) {
+	if p.IsLocked() {
+		return false, ""
+	}
+
+	if lockToken == "" {
+		lockToken = util.GenerateRandomString(25)
+	}
+	if isDepthInfinity {
+		for _, child := range p.childrenMap {
+			child.Lock(isDepthInfinity, lockToken)
+		}
+
+	}
+	p.isLocked = true
+	p.lockToken = lockToken
+
+	return true, p.lockToken
+}
+
+/*
+리소스 잠금 해제
+*/
+func (p *ResourceObject) Unlock(lockToken string) bool {
+	if !p.IsLocked() {
+		return false
+	}
+
+	if lockToken != p.lockToken {
+		return false
+	}
+
+	p.isLocked = false
+	p.lockToken = ""
+	return true
+}
+
+/*
+리소스 강제 잠금 해제
+*/
+func (p *ResourceObject) UnlockForce() bool {
+	if !p.IsLocked() {
+		return false
+	}
+
+	p.isLocked = false
+	p.lockToken = ""
+	return true
+}
+
+/*
 리소스가 폴더(Directory)인지 여부 반환
 */
 func (p ResourceObject) IsDirectory() bool {
@@ -293,6 +364,8 @@ func NewResourceObject(param ResourceConstructorParam) *ResourceObject {
 		userPermissionMap:  param.UserPermissionMap,
 		groupPermissionMap: param.GroupPermissionMap,
 		childrenMap:        map[string](*ResourceObject){},
+		isLocked:           false,
+		lockToken:          "",
 	}
 	return p
 }
@@ -344,6 +417,8 @@ func FromMapResourceObject(resourceObjectMap map[string]any) *ResourceObject {
 		userPermissionMap:  userPermissionMap,
 		groupPermissionMap: groupPermissionMap,
 		childrenMap:        childrenMap,
+		isLocked:           false,
+		lockToken:          "",
 	}
 
 	return resourceObject

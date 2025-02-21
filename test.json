@@ -10,12 +10,29 @@
                 "userPermissionMap": {}
             },
             "test": {
-                "childrenMap": {},
+                "childrenMap": {
+                    "ass.txt": {
+                        "childrenMap": {},
+                        "groupPermissionMap": {},
+                        "isDirectory": false,
+                        "name": "ass.txt",
+                        "path": "/test/ass.txt",
+                        "userPermissionMap": {
+                            "snom": [
+                                "read"
+                            ]
+                        }
+                    }
+                },
                 "groupPermissionMap": {},
                 "isDirectory": true,
                 "name": "test",
                 "path": "/test",
-                "userPermissionMap": {}
+                "userPermissionMap": {
+                    "snom": [
+                        "read"
+                    ]
+                }
             }
         },
         "groupPermissionMap": {},

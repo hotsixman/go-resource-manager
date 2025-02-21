@@ -120,6 +120,44 @@ func (m *ResourceManager) DeleteGroupPermission(path string, groupname string, p
 }
 
 /*
+경로에 해당하는 리소스 잠금
+  - @return {bool} 잠금 성공 여부
+  - @return {string} 잠금 토큰
+*/
+func (m *ResourceManager) Lock(path string, isDepthInfinity bool) (bool, string) {
+	resource := m.GetResourceObject(path)
+	if resource == nil {
+		return false, ""
+	}
+
+	return resource.Lock(isDepthInfinity, "")
+}
+
+/*
+경로에 해당하는 리소스 잠금 해제
+*/
+func (m *ResourceManager) Unlock(path string, lockToken string) bool {
+	resource := m.GetResourceObject(path)
+	if resource == nil {
+		return false
+	}
+
+	return resource.Unlock(lockToken)
+}
+
+/*
+경로에 해당하는 리소스 강제 잠금 해제
+*/
+func (m *ResourceManager) UnlockForce(path string) bool {
+	resource := m.GetResourceObject(path)
+	if resource == nil {
+		return false
+	}
+
+	return resource.UnlockForce()
+}
+
+/*
 경로에 리소스 생성
   - @return {bool} 성공 여부
   - @return {*ResourceObject} 생성한 리소스 객체의 포인터, 실패시 nil
@@ -253,7 +291,7 @@ func FromJsonResourceManager(jsonData string) *ResourceManager {
 	var resourceManagerMap map[string]any
 	json.Unmarshal([]byte(jsonData), &resourceManagerMap)
 
-	rootResource := FromJsonResourceObject(resourceManagerMap["rootResource"].(string))
+	rootResource := FromMapResourceObject(resourceManagerMap["rootResource"].(map[string]any))
 	m := &ResourceManager{
 		rootResource: rootResource,
 	}
