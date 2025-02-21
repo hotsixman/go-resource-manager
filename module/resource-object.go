@@ -5,17 +5,16 @@ import (
 )
 
 type ResourceObject struct {
-	isCollection       bool
+	isDirectory        bool
 	path               string
 	name               string
 	userPermissionMap  map[string]([]string)
 	groupPermissionMap map[string]([]string)
-	children           [](*ResourceObject)
 	childrenMap        map[string](*ResourceObject)
 }
 
 type ResourceConstructorParam struct {
-	IsCollection       bool
+	IsDirectory        bool
 	Path               string
 	Name               string
 	UserPermissionMap  map[string]([]string)
@@ -79,18 +78,7 @@ func (p ResourceObject) CheckGroupPermission(groupname string, permission string
 /*
 유저 권한 추가
 */
-func (p *ResourceObject) AddUserPermission(username string, permission string) bool {
-	isValid := false
-	for _, v := range PERMISSIONS {
-		if v == permission {
-			isValid = true
-			break
-		}
-	}
-	if !isValid {
-		return false
-	}
-
+func (p *ResourceObject) AddUserPermission(username string, permission string) []string {
 	userPermissions := p.userPermissionMap[username]
 	if userPermissions == nil {
 		userPermissions = []string{}
@@ -103,29 +91,18 @@ func (p *ResourceObject) AddUserPermission(username string, permission string) b
 		}
 	}
 	if alreadyHasPermission {
-		return true
+		return p.GetUserPermissions(username)
 	}
 
 	userPermissions = append(userPermissions, permission)
 	p.userPermissionMap[username] = userPermissions
-	return true
+	return p.GetUserPermissions(username)
 }
 
 /*
 그룹 권한 추가
 */
-func (p *ResourceObject) AddGroupPermission(groupname string, permission string) bool {
-	isValid := false
-	for _, v := range PERMISSIONS {
-		if v == permission {
-			isValid = true
-			break
-		}
-	}
-	if !isValid {
-		return false
-	}
-
+func (p *ResourceObject) AddGroupPermission(groupname string, permission string) []string {
 	groupPermissions := p.groupPermissionMap[groupname]
 	if groupPermissions == nil {
 		groupPermissions = []string{}
@@ -138,12 +115,12 @@ func (p *ResourceObject) AddGroupPermission(groupname string, permission string)
 		}
 	}
 	if alreadyHasPermission {
-		return true
+		return p.GetGroupPermissions(groupname)
 	}
 
 	groupPermissions = append(groupPermissions, permission)
 	p.groupPermissionMap[groupname] = groupPermissions
-	return true
+	return p.GetGroupPermissions(groupname)
 }
 
 /*
@@ -191,17 +168,17 @@ func (p *ResourceObject) DeleteGroupPermission(groupname string, permission stri
 }
 
 /*
-리소스가 폴더(collection)인지 여부 반환
+리소스가 폴더(Directory)인지 여부 반환
 */
-func (p ResourceObject) IsCollection() bool {
-	return p.isCollection
+func (p ResourceObject) IsDirectory() bool {
+	return p.isDirectory
 }
 
 /*
 리소스가 파일인지 여부 반환
 */
 func (p ResourceObject) IsFile() bool {
-	return !p.isCollection
+	return !p.isDirectory
 }
 
 /*
@@ -226,7 +203,11 @@ func (p ResourceObject) GetChild(name string) *ResourceObject {
 
 - @return {*ResourceObject} 생성한 하위 리소스, 성공 여부가 false이면 nil
 */
-func (p *ResourceObject) CreateChild(name string, isCollection bool) (bool, *ResourceObject) {
+func (p *ResourceObject) CreateChild(name string, isDirectory bool) (bool, *ResourceObject) {
+	if name == "" {
+		return false, nil
+	}
+
 	child := p.GetChild(name)
 	if child != nil {
 		return false, nil
@@ -241,14 +222,13 @@ func (p *ResourceObject) CreateChild(name string, isCollection bool) (bool, *Res
 
 	constructorParam := ResourceConstructorParam{
 		Name:               name,
-		IsCollection:       isCollection,
+		IsDirectory:        isDirectory,
 		Path:               childPath,
 		UserPermissionMap:  p.userPermissionMap,
 		GroupPermissionMap: p.groupPermissionMap,
 	}
 	child = NewResourceObject(constructorParam)
 
-	p.children = append(p.children, child)
 	p.childrenMap[name] = child
 
 	return true, child
@@ -264,16 +244,6 @@ func (p *ResourceObject) RemoveChild(name string) bool {
 	}
 
 	delete(p.childrenMap, name)
-	childIndex := -1
-	for i, v := range p.children {
-		if v.name == name {
-			childIndex = i
-			break
-		}
-	}
-	if childIndex >= 0 {
-		p.children = append(p.children[:childIndex], p.children[childIndex+1:]...)
-	}
 	return true
 }
 
@@ -282,25 +252,16 @@ Map화
 */
 func (p ResourceObject) ToMap() map[string]any {
 	childrenMap := map[string](map[string]any){}
-	children := []map[string]any{}
 	for key, value := range p.childrenMap {
 		childMap := value.ToMap()
 		childrenMap[key] = childMap
 	}
-	for _, value := range p.children {
-		if childrenMap[value.name] != nil {
-			children = append(children, childrenMap[value.name])
-		} else {
-			children = append(children, value.ToMap())
-		}
-	}
 	resourceObjectMap := map[string]any{
-		"isCollection":       p.isCollection,
+		"isDirectory":        p.isDirectory,
 		"path":               p.path,
 		"name":               p.name,
 		"userPermissionMap":  p.userPermissionMap,
 		"groupPermissionMap": p.groupPermissionMap,
-		"children":           children,
 		"childrenMap":        childrenMap,
 	}
 	return resourceObjectMap
@@ -324,12 +285,11 @@ ResourceObject 생성자 함수
 */
 func NewResourceObject(param ResourceConstructorParam) *ResourceObject {
 	p := &ResourceObject{
-		isCollection:       param.IsCollection,
+		isDirectory:        param.IsDirectory,
 		path:               param.Path,
 		name:               param.Name,
 		userPermissionMap:  param.UserPermissionMap,
 		groupPermissionMap: param.GroupPermissionMap,
-		children:           [](*ResourceObject){},
 		childrenMap:        map[string](*ResourceObject){},
 	}
 	return p
@@ -342,7 +302,7 @@ func FromJsonResourceObject(jsonData string) *ResourceObject {
 }
 
 func FromMapResourceObject(resourceObjectMap map[string]any) *ResourceObject {
-	isCollection := resourceObjectMap["isCollection"].(bool)
+	isDirectory := resourceObjectMap["isDirectory"].(bool)
 	path := resourceObjectMap["path"].(string)
 	name := resourceObjectMap["name"].(string)
 
@@ -363,24 +323,18 @@ func FromMapResourceObject(resourceObjectMap map[string]any) *ResourceObject {
 		groupPermissionMap[key] = permissions
 	}
 
-	children := [](*ResourceObject){}
 	childrenMap := map[string](*ResourceObject){}
-	for _, v := range resourceObjectMap["children"].([]any) {
-		childMap := v.((map[string]any))
-		children = append(children, FromMapResourceObject(childMap))
-	}
 	for key, value := range resourceObjectMap["childrenMap"].(map[string]any) {
 		childMap := value.(map[string]any)
 		childrenMap[key] = FromMapResourceObject(childMap)
 	}
 
 	resourceObject := &ResourceObject{
-		isCollection:       isCollection,
+		isDirectory:        isDirectory,
 		path:               path,
 		name:               name,
 		userPermissionMap:  userPermissionMap,
 		groupPermissionMap: groupPermissionMap,
-		children:           children,
 		childrenMap:        childrenMap,
 	}
 
